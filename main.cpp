@@ -70,16 +70,61 @@ struct chunks : qi::grammar<Iterator, std::vector<std::string>()> {
             using phoenix::construct;
             using phoenix::val;
 
-		content = chunk >> *chunk >> *end_boundry;
+		content = chunk >> *chunk >> end_boundry;
 		chunk = chunk_boundry >> value;
 		chunk_boundry = qi::lit("--") >> boundry >> boost::spirit::eol;
-		end_boundry = qi::lit("--") >> boundry >> qi::lit("--");
-		value = +(ascii::char_ - chunk_boundry);
+		end_boundry = qi::lit("--") >> boundry >> qi::lit("--") >> -boost::spirit::eol;
+		value = +(ascii::char_ - end_boundry - chunk_boundry);
 	}
 
 	qi::rule<Iterator, std::vector<std::string>()> content;
 	qi::rule<Iterator, std::string()> value, chunk, chunk_boundry, end_boundry;
 };
+
+template <typename Iterator>
+struct chunk_tokens : qi::grammar<Iterator, std::vector<std::string>()> {
+
+	chunk_tokens() : chunk_tokens::base_type(content) {
+
+            using qi::lit;
+            using qi::lexeme;
+            using qi::on_error;
+            using qi::fail;
+            using ascii::char_;
+            using ascii::string;
+            using namespace qi::labels;
+
+            using phoenix::construct;
+            using phoenix::val;
+
+		content = *header >> boost::spirit::eol >> *body;
+		token = header | body;
+		header = +(ascii::char_ - boost::spirit::eol) >> boost::spirit::eol;
+		body = +(ascii::char_ | boost::spirit::eol);
+	}
+
+	qi::rule<Iterator, std::vector<std::string>()> content;
+	qi::rule<Iterator, std::string()> token, header, body;
+};
+
+void test_chunk_tokens(std::string input) {
+	LOG_INFO(std::endl);
+	std::string::iterator begin = input.begin();
+	std::string::iterator end = input.end();
+	chunk_tokens<std::string::iterator> p;
+	std::vector<std::string> v;
+
+	bool result = qi::parse(begin, end, p, v);
+	if (result) {
+		LOG_INFO("Success matching input" << std::endl);
+		std::vector<std::string>::iterator iter;
+		for (iter = v.begin(); iter != v.end(); ++iter) {
+			std::cout << " - value: "<< std::endl << *iter << std::endl << std::endl;
+		}
+		return;
+	}
+	LOG_INFO("Failure matching " << std::endl << std::endl << input << std::endl);
+}
 
 void test_header_tokens(std::string input) {
 	LOG_INFO(std::endl);
@@ -119,21 +164,32 @@ void test_chunks(std::string boundry, std::string input) {
 	LOG_INFO("Failure matching " << std::endl << std::endl << input << std::endl);
 }
 
-const char *input_1 = 
-"--randomboundaryXYZ\n"
-"Content-Disposition: form-data; name=\"sha1-9b03f7aca1ac60d40b5e570c34f79a3e07c918e8\"; filename=\"blob1\"\n"
-"Content-Type: application/octet-stream\n\n"
-"(binary or text blob data)\n"
-"--randomboundaryXYZ\n"
-"Content-Disposition: form-data; name=\"sha1-deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\"; filename=\"blob2\"\n"
-"Content-Type: application/octet-stream\n\n"
-"(binary or text blob data)\n"
-"--randomboundaryXYZ--\n";
+const char *chunks_1 = 
+	"--randomboundaryXYZ\n"
+	"Content-Disposition: form-data; name=\"sha1-9b03f7aca1ac60d40b5e570c34f79a3e07c918e8\"; filename=\"blob1\"\n"
+	"Content-Type: application/octet-stream\n\n"
+	"(binary or text blob data)\n"
+	"--randomboundaryXYZ\n"
+	"Content-Disposition: form-data; name=\"sha1-deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\"; filename=\"blob2\"\n"
+	"Content-Type: application/octet-stream\n\n"
+	"(binary or text blob data)\n"
+	"--randomboundaryXYZ--\n";
 
+const char *chunk_1 =
+	"Content-Disposition: form-data; name=\"sha1-deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\"; filename=\"blob2\"\n"
+	"Content-Type: application/octet-stream\n\n"
+	"(binary or text blob data)\n"
+	"(binary or text blob data)\n"
+	"(binary or text blob data)\n";
 
 int main() {
 	test_header_tokens("form-data; name=\"sha1-9b03f7aca1ac60d40b5e570c34f79a3e07c918e8\"; filename=\"blob1\"");
-	std::string input1(input_1, 0, strlen(input_1));
-	test_chunks("randomboundaryXYZ", input1);
+
+	std::string chunks1(chunks_1, 0, strlen(chunks_1));
+	test_chunks("randomboundaryXYZ", chunks1);
+
+	std::string chunk1(chunk_1, 0, strlen(chunk_1));
+	test_chunk_tokens(chunk1);
+
 	return 0;
 }
