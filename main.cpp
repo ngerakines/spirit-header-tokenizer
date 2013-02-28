@@ -15,13 +15,84 @@
 #include <string>
 #include <vector>
 
-
 #define LOG_INFO(X) std::cout << X;
 #define LOG_ERROR(X) std::cerr << X;
 
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 namespace phoenix = boost::phoenix;
+
+class Header {
+
+	public:
+
+		Header(std::string name, std::vector<std::pair<std::string, std::string> > attributes) : name_(name), attributes_(attributes) { } 
+
+		std::string name() {
+			return name_;
+		}
+
+		std::vector<std::pair<std::string, std::string> > attributes() {
+			return attributes_;
+		}
+
+		std::string attributeValue(std::string name) {
+			std::vector<std::pair<std::string, std::string> >::iterator iter;
+			std::string lower_name = boost::to_lower_copy(name);
+			for (iter = attributes_.begin(); iter != attributes_.end(); ++iter) {
+				if (boost::to_lower_copy((*iter).first) == lower_name) {
+					return (*iter).second;
+				}
+			}
+			return "";
+		}
+
+	private:
+		std::string name_;
+		std::vector<std::pair<std::string, std::string> > attributes_;
+};
+
+class Part {
+
+	public:
+		std::vector<Header*> headers() {
+			return headers_;
+		}
+
+		std::vector<char> payload() {
+			return payload_;
+		}
+
+		void add_header(Header* header) {
+			headers_.push_back(header);
+		}
+
+	private:
+		std::vector<Header*> headers_;
+		std::vector<char> payload_;
+
+};
+
+class MultiPartFormData {
+
+	public:
+
+		std::string boundry() {
+			return boundry_;
+		}
+
+		std::vector<Part*> parts() {
+			return parts_;
+		}
+
+		void add_part(Part* part) {
+			parts_.push_back(part);
+		}
+
+	private:
+		std::string boundry_;
+		std::vector<Part*> parts_;
+};
 
 template <typename Iterator>
 struct header_tokens : qi::grammar<Iterator, std::map<std::string, std::string>()> {
@@ -168,6 +239,47 @@ const char *chunk_1 =
     "(binary or text blob data)\n"
     "(binary or text blob data)\n"
     "(binary or text blob data)\n";
+
+
+MultiPartFormData* parse(std::string boundry, std::string input) {
+	chunks<std::string::iterator> chunks_parser(boundry);
+	std::vector<std::string> chunks_vector;
+	bool result = qi::parse(input.begin(), input.end(), chunks_parser, chunks_vector);
+
+	if (result) {
+
+		MultiPartFormData *multiPartFormData = new MultiPartFormData();
+
+		std::vector<std::string>::iterator chunks_iter;
+		for (chunks_iter = chunks_vector.begin(); chunks_iter != chunks_vector.end(); ++chunks_iter) {
+
+			std::string chunk_data = *chunks_iter;
+			chunk_tokens<std::string::iterator> chunk_parser;
+			std::vector<std::string> chunk_vector;
+			bool chunk_result = qi::parse(chunk_data.begin(), chunk_data.end(), chunk_parser, chunk_vector);
+
+			if (chunk_result) {
+				std::vector<std::string>::iterator chunk_iter;
+				bool handled_last = false
+				for (chunk_iter = chunk_vector.rbegin(); chunk_iter != chunk_vector.rend(); ++chunk_iter) {
+					std::cout << " - value: " << std::endl << *iter << std::endl << std::endl;
+					if (handled_last) {
+						// parse header
+					} else {
+						// set payload
+					}
+					handled_last = true;
+				}
+			}
+
+		}
+
+		return multiPartFormData;
+	}
+
+	return NULL;
+}
+
 
 int main() {
 	test_header_tokens("form-data; name=\"sha1-9b03f7aca1ac60d40b5e570c34f79a3e07c918e8\"; filename=\"blob1\"");
