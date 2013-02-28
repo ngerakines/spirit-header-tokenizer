@@ -122,6 +122,21 @@ MultiPartFormData::MultiPartFormData(std::string boundry, std::string input) {
 	}
 }
 
+MultiPartFormData::~MultiPartFormData() {
+	for (int i = 0; i < (int) parts_.size(); i++) {
+		delete parts_[i];
+	}
+	parts_.clear();
+}
+
+Part::~Part() {
+	for (int i = 0; i < (int) headers_.size(); i++) {
+		delete headers_[i];
+	}
+	headers_.clear();
+}
+
+
 Header::Header(std::string name, std::map<std::string, std::string> attributes) : name_(name), attributes_(attributes) {
 }
 

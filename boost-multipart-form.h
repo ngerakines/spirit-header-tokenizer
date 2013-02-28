@@ -69,6 +69,8 @@ class Header {
 class Part {
 
 	public:
+		~Part();
+
 		std::vector<Header*> headers() {
 			return headers_;
 		}
@@ -128,6 +130,7 @@ class MultiPartFormData {
 	public:
 
 		MultiPartFormData(std::string boundry, std::string input);
+		~MultiPartFormData();
 
 		std::string boundry() {
 			return boundry_;
