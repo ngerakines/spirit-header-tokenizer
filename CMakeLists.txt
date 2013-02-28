@@ -9,5 +9,5 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 # -Wall -Wextra
 add_definitions(-g -gstabs+)
 
-add_executable(main main.cpp)
+add_executable(main main.cpp boost-multipart-form.cpp)
 TARGET_LINK_LIBRARIES(main)

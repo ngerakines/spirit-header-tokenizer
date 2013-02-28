@@ -1,9 +1,14 @@
 
+#ifndef __MULTIPART_FORM_H__
+#define __MULTIPART_FORM_H__
+
 #include <string>
 #include <vector>
 #include <map>
 #include <iostream>
 #include <sstream>
+
+#include <boost/scoped_ptr.hpp>
 
 #define LOG_INFO(X) std::cout << X;
 #define LOG_ERROR(X) std::cerr << X;
@@ -112,6 +117,8 @@ class MultiPartFormData {
 
 	public:
 
+		MultiPartFormData(std::string boundry, std::string input);
+
 		std::string boundry() {
 			return boundry_;
 		}
@@ -148,3 +155,5 @@ class MultiPartFormData {
 		std::string boundry_;
 		std::vector<Part*> parts_;
 };
+
+#endif
