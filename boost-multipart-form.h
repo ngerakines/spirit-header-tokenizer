@@ -44,12 +44,17 @@ class Header {
 
 			std::map<std::string, std::string> attrs = attributes();
 			std::map<std::string, std::string>::iterator iter;
+			ss << "attributes=[";
 			for (iter = attrs.begin(); iter != attrs.end(); ++iter) {
-				ss << " " << iter->first;
+				if (iter != attrs.begin()) {
+					ss << ", ";
+				}
+				ss << iter->first;
 				if (iter->second != "") {
 					ss << "=" << iter->second;
 				}
 			}
+			ss << "]";
 
 			ss << "}";
 
@@ -94,13 +99,18 @@ class Part {
 			std::stringstream ss;
 			ss << "Part{";
 			std::string payload(payload_.begin(), payload_.end());
-			ss << " payload=***" << payload << "***";
+			ss << " payload='" << payload << "'";
 
 			std::vector<Header*> hdrs = headers();
+			ss << " headers=[";
 			std::vector<Header*>::iterator iter;
 			for (iter = hdrs.begin(); iter != hdrs.end(); ++iter) {
-				ss << " " << *(*iter);
+				if (iter != hdrs.begin()) {
+					ss << ", ";
+				}
+				ss << *(*iter);
 			}
+			ss << "]";
 
 			ss << "}";
 
@@ -138,10 +148,10 @@ class MultiPartFormData {
 		virtual std::ostream& dump(std::ostream& o) const {
 
 			std::stringstream ss;
-			ss << "MultiPartFormData{ boundry=" << boundry_ ;
+			ss << "MultiPartFormData{ boundry='" << boundry_ << "'";
 			std::vector<Part*> prts = parts();
 			std::vector<Part*>::iterator iter;
-			ss << "parts=[" << std::endl;
+			ss << " parts=[" << std::endl;
 			for (iter = prts.begin(); iter != prts.end(); ++iter) {
 				ss << " " << *(*iter) << std::endl;
 			}
